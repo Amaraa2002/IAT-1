@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>IAT Words — 9 Parts</title>
+<title>IAT Words — 10 Parts</title>
 <style>
   body { font-family:"Times New Roman",serif; background:#f7fbfd; margin:0; }
   .frame { border:6px solid #bfe3f1; background:#fff; padding:24px 30px; width:900px; max-width:94vw; margin:36px auto; }
@@ -46,6 +46,12 @@
   .survey-option input { margin: 0; }
   .survey-option label { font-weight: normal; cursor: pointer; margin: 0; }
 
+  /* Table styles for surveys */
+  .survey-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+  .survey-table th, .survey-table td { padding: 12px 8px; text-align: center; border: 1px solid #ddd; }
+  .survey-table th { background: #f0f0f0; font-weight: 600; }
+  .survey-table tr:hover { background: #f5f5f5; }
+
   /* Completion UI */
   .results-box { border:6px solid #bfe3f1; background:#fff; padding:20px 24px; width:900px; max-width:94vw; margin:24px auto; }
   .results-title { font-size:18px; font-weight:700; margin-bottom:8px; }
@@ -64,54 +70,188 @@
     .stimulus { font-size: 36px; margin: 30px 0 12px; }
     .left, .right { font-size: 24px; }
     .form-row { grid-template-columns: 1fr; gap: 5px; }
+    .survey-table { font-size: 12px; }
+    .survey-table th, .survey-table td { padding: 8px 4px; }
   }
 </style>
 </head>
 <body>
 
-<!-- ===== 1) SETUP ===== -->
-<div class="frame" id="setup">
-  <div class="part">Оролцогчийн мэдээлэл</div>
-  <div class="form-row">
-    <label for="pid">ID / Нэр<span style="color:#c62828">*</span></label>
-    <input id="pid" placeholder="Жишээ: B.Batbayar" />
-  </div>
-  <div class="form-row">
-    <label for="age">Нас<span style="color:#c62828">*</span></label>
-    <input id="age" type="number" min="5" max="120" placeholder="Жишээ: 23" />
-  </div>
-  <div class="form-row">
-    <label for="gender">Хүйс</label>
-    <select id="gender">
-      <option value="">Сонгох</option>
-      <option value="male">Эр</option>
-      <option value="female">Эм</option>
-      <option value="other">Бусад</option>
-    </select>
-  </div>
-  <div class="form-row">
-    <label for="body_position">Биений байрлал</label>
-    <select id="body_position">
-      <option value="">Сонгох</option>
-      <option value="sitting">Эгц</option>
-      <option value="standing">Бөхийсөн</option>
-      <option value="other">Бусад</option>
-    </select>
-  </div>
-  <div class="note">Enter дарж эсвэл доорх товчийг дарж үргэлжлүүлнэ.</div>
-  <div style="text-align:center; margin-top:14px">
-    <button class="btn" type="button" onclick="window.goIntro()">Зааварт шилжих</button>
-  </div>
-  <div class="err hidden" id="setupErr"></div>
-</div>
+<!-- ===== 0) CONSENT FORM ===== -->
+<div class="frame" id="consentForm">
+  <div class="part">Судалгаанд оролцогчоос авах зөвшөөрлийн хэсэг</div>
   
-<!-- ===== 2) INSTRUCTIONS ===== -->
+  <div class="instructions">
+    <p>Таны хувийн мэдээллийг Хувь хүний нууцын тухай хууль болон Олон улсын сэтгэл судлаачдын баримталдаг мэргэжлийн ёс зүйн хэм хэмжээний дагуу чандлан хадгалах болно.</p>
+    
+    <p>Та судалгаанд сайн дурын үндсэн дээр оролцох бөгөөд судалгааны аль ч үед судалгаанаас гарах, оролцохоос татгалзах эрхтэй.</p>
+    
+    <p><strong>Эрсдэл ба хэндэтгэх ёс зүйн асуудлууд:</strong> Уг судалгаанд оролцоход ямар нэгэн эрсдэл гарахгүй.</p>
+    
+    <p><strong>Нууцлал:</strong> Мэдээллийг зөвхөн эрдэм шинжилгээ, судалгааны зорилгоор ашиглана.</p>
+    
+    <p>Таныг судалгаанд оролцож, бидний ажилд тусална гэдэгт итгэж байна.</p>
+    
+    <p>Би дээрх мэдээлэлтэй танилцаж судалгааны зорилго, ач холбогдлыг ойлгосон тул судалгаанд оролцохыг зөвшөөрч байна.</p>
+  </div>
+
+  <div class="survey-options" style="margin: 20px 0;">
+    <div class="survey-option">
+      <input type="checkbox" id="consentCheckbox">
+      <label for="consentCheckbox"><strong>Зөвшөөрч байна</strong></label>
+    </div>
+  </div>
+
+  <div style="text-align:center; margin-top:20px;">
+    <button class="btn" id="btnConsentNext" disabled>Next</button>
+  </div>
+</div>
+
+<!-- ===== 1) DEMOGRAPHIC SURVEY ===== -->
+<div class="frame hidden" id="demographicSurvey">
+  <div class="survey-title">Судалгааны эхний хэсэг</div>
+  
+  <!-- Нас -->
+  <div class="survey-question">
+    <div class="survey-question-text">Таны нас<span style="color:#c62828">*</span></div>
+    <div class="note">This is a required question</div>
+    <input type="number" id="surveyAge" min="10" max="100" style="width: 200px; margin-top: 10px;" placeholder="Насаа оруулна уу">
+  </div>
+
+  <!-- Хүйс -->
+  <div class="survey-question">
+    <div class="survey-question-text">Таны хүйс<span style="color:#c62828">*</span></div>
+    <div class="survey-options">
+      <div class="survey-option">
+        <input type="radio" id="genderMale" name="gender" value="Эрэгтэй">
+        <label for="genderMale">Эрэгтэй</label>
+      </div>
+      <div class="survey-option">
+        <input type="radio" id="genderFemale" name="gender" value="Эмэгтэй">
+        <label for="genderFemale">Эмэгтэй</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Сургууль, салбар -->
+  <div class="survey-question">
+    <div class="survey-question-text">Таны суралцаж буй салбар сургууль<span style="color:#c62828">*</span></div>
+    <input type="text" id="surveySchool" style="width: 100%; margin-top: 10px;" placeholder="Сургууль, салбараа оруулна уу">
+  </div>
+
+  <!-- Сурлагын түвшин -->
+  <div class="survey-question">
+    <div class="survey-question-text">Таны суралцаж буй түвшин<span style="color:#c62828">*</span></div>
+    <div class="survey-options">
+      <div class="survey-option">
+        <input type="radio" id="level1" name="studyLevel" value="1-р түвшин">
+        <label for="level1">1-р түвшин</label>
+      </div>
+      <div class="survey-option">
+        <input type="radio" id="level2" name="studyLevel" value="2-р түвшин">
+        <label for="level2">2-р түвшин</label>
+      </div>
+      <div class="survey-option">
+        <input type="radio" id="level3" name="studyLevel" value="3-р түвшин">
+        <label for="level3">3-р түвшин</label>
+      </div>
+      <div class="survey-option">
+        <input type="radio" id="level4" name="studyLevel" value="4-р түвшин">
+        <label for="level4">4-р түвшин</label>
+      </div>
+      <div class="survey-option">
+        <input type="radio" id="level5" name="studyLevel" value="5-р түвшин">
+        <label for="level5">5-р түвшин</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Шинж чанарууд -->
+  <div class="survey-question">
+    <div class="survey-question-text">
+      Та өөрт тохирох шинж чанарыг сонгоно уу (Хамгийн багадаа 8 хариулт сонгоно уу).<span style="color:#c62828">*</span>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
+      <div class="survey-option">
+        <input type="checkbox" id="trait1" name="traits" value="Бие даасан">
+        <label for="trait1">Бие даасан</label>
+      </div>
+      <div class="survey-option">
+        <input type="checkbox" id="trait2" name="traits" value="Идэвхтэй">
+        <label for="trait2">Идэвхтэй</label>
+      </div>
+      <div class="survey-option">
+        <input type="checkbox" id="trait3" name="traits" value="Өрсөлдөх дуртай">
+        <label for="trait3">Өрсөлдөх дуртай</label>
+      </div>
+      <div class="survey-option">
+        <input type="checkbox" id="trait4" name="traits" value="Шийдвэр гаргаж чаддаг">
+        <label for="trait4">Шийдвэр гаргаж чаддаг</label>
+      </div>
+      <div class="survey-option">
+        <input type="checkbox" id="trait5" name="traits" value="Бууж өгөх дургүй">
+        <label for="trait5">Бууж өгөх дургүй</label>
+      </div>
+      <div class="survey-option">
+        <input type="checkbox" id="trait6" name="traits" value="Өөртөө итгэлтэй">
+        <label for="trait6">Өөртөө итгэлтэй</label>
+      </div>
+      <div class="survey-option">
+        <input type="checkbox" id="trait7" name="traits" value="Бусдаас илүү юм шиг санагддаг">
+        <label for="trait7">Бусдаас илүү юм шиг санагддаг</label>
+      </div>
+      <div class="survey-option">
+        <input type="checkbox" id="trait8" name="traits" value="Ачаалал, дарамтыг тэсвэрлэж чаддаг">
+        <label for="trait8">Ачаалал, дарамтыг тэсвэрлэж чаддаг</label>
+      </div>
+      <div class="survey-option">
+        <input type="checkbox" id="trait9" name="traits" value="Сэтгэл хөдлөм ихтэй">
+        <label for="trait9">Сэтгэл хөдлөм ихтэй</label>
+      </div>
+      <div class="survey-option">
+        <input type="checkbox" id="trait10" name="traits" value="Би бусдад өөрийгөө зориулдаг">
+        <label for="trait10">Би бусдад өөрийгөө зориулдаг</label>
+      </div>
+      <div class="survey-option">
+        <input type="checkbox" id="trait11" name="traits" value="Аядуу зөөлөн">
+        <label for="trait11">Аядуу зөөлөн</label>
+      </div>
+      <div class="survey-option">
+        <input type="checkbox" id="trait12" name="traits" value="Бусдад тусалдаг">
+        <label for="trait12">Бусдад тусалдаг</label>
+      </div>
+      <div class="survey-option">
+        <input type="checkbox" id="trait13" name="traits" value="Найрсаг">
+        <label for="trait13">Найрсаг</label>
+      </div>
+      <div class="survey-option">
+        <input type="checkbox" id="trait14" name="traits" value="Бусдын мэдрэмжийг анзаардаг">
+        <label for="trait14">Бусдын мэдрэмжийг анзаардаг</label>
+      </div>
+      <div class="survey-option">
+        <input type="checkbox" id="trait15" name="traits" value="Бусдыг ойлгодог">
+        <label for="trait15">Бусдыг ойлгодог</label>
+      </div>
+      <div class="survey-option">
+        <input type="checkbox" id="trait16" name="traits" value="Бусадтай халуун дулаан харилцаатай">
+        <label for="trait16">Бусадтай халуун дулаан харилцаатай</label>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center; margin-top:30px;">
+    <button class="btn btn-success" id="btnDemographicNext">Үргэлжлүүлэх</button>
+  </div>
+  <div class="err hidden" id="demographicErr"></div>
+</div>
+
+<!-- ===== 2) IAT INSTRUCTIONS ===== -->
 <div class="frame hidden" id="intro">
   <div class="top">
     <div class="hint">Press "E" for</div><div></div><div class="hint">Press "I" for</div>
     <div class="left" id="leftCategory">Би</div><div></div><div class="right" id="rightCategory">Тэд</div>
   </div>
-  <div class="part" id="introPartLabel">Part 1 of 9</div>
+  <div class="part" id="introPartLabel">Part 1 of 10</div>
   <div class="instructions" id="instructionsText">
     <p>Зүүн гарын дунд эсвэл долоовор хурууг компьютерийн гарны E товчлуур, баруун гарын дунд эсвэл долоовор хурууг компьютерийн гарны I товчлуур дээр тус тус байрлуул. ... Та зааврыг ойлгосон бол "ЗАЙ АВАХ ТОВЧЛУУР" дарж туршилтыг эхэлнэ.</p>
   </div>
@@ -121,13 +261,13 @@
   </div>
 </div>
 
-<!-- ===== 3) STAGE ===== -->
+<!-- ===== 3) IAT STAGE ===== -->
 <div class="frame hidden" id="stage">
   <div class="top">
     <div class="hint">Press "E" for</div><div></div><div class="hint">Press "I" for</div>
     <div class="left" id="stageLeftCategory">Би</div><div></div><div class="right" id="stageRightCategory">Тэд</div>
   </div>
-  <div class="part" id="partLabel">Part 1 of 9</div>
+  <div class="part" id="partLabel">Part 1 of 10</div>
   <div class="stimulus" id="stimulusWord">Smile</div>
   
   <!-- Mobile buttons for E/I -->
@@ -139,54 +279,111 @@
   <div id="errorX" class="bigx hidden">X</div>
 </div>
 
-<!-- ===== 4) SURVEY 1: Self-Esteem ===== -->
-<div class="frame hidden" id="survey1">
+<!-- ===== 4) RESILIENCE SURVEY ===== -->
+<div class="frame hidden" id="resilienceSurvey">
+  <div class="survey-title">Давширлын (Resilience) Асуулга</div>
+  <div class="survey-intro">
+    Судалгааны бодомжуудад зөв, буруу хариулт гэж байхгүй учир та өөрт төрсөн мэдрэмжээрээ хариулаарай. Өөрийн сонгосон хариултынхаа харгалзах нүдийг сонгох замаар асуулт нэг бүрт бүрэн хариулт өгнө үү.
+  </div>
+  
+  <table class="survey-table">
+    <thead>
+      <tr>
+        <th style="width: 60%;">Асуултууд</th>
+        <th>Огт үнэн биш (0)</th>
+        <th>Бараг л үнэн биш (1)</th>
+        <th>Заримдаа үнэн (2)</th>
+        <th>Ер нь үнэн (3)</th>
+        <th>Үнэхээр үнэн (4)</th>
+      </tr>
+    </thead>
+    <tbody id="resilienceQuestions">
+      <!-- Questions will be inserted here by JavaScript -->
+    </tbody>
+  </table>
+
+  <div class="survey-nav">
+    <button class="btn btn-success" id="btnResilienceNext">Дараачийн асуулга руу шилжих</button>
+  </div>
+  <div class="err hidden" id="resilienceErr"></div>
+</div>
+
+<!-- ===== 5) SELF_ESTEEM SURVEY ===== -->
+<div class="frame hidden" id="selfEsteemSurvey">
   <div class="survey-title">Өөрийн Үнэлэмжийн Асуулга</div>
-  <div class="survey-intro">
-    Энэ асуулга нь таны өөрийгөө үнэлэх түвшинг тодорхойлох зорилготой. Та өгүүлбэр бүрийг уншаад өөрт хамгийн ойр санагдсан хариултыг сонгоно уу. Зөв буруу гэсэн хариулт байхгүй учир таны мэдрэмж, бодол хамгийн зөв хариулт болно. Хариулахдаа доорх дөрвөн сонголтоос аль нэгийг тэмдэглэнэ үү.
-  </div>
-  <div id="survey1Questions"></div>
+  
+  <table class="survey-table">
+    <thead>
+      <tr>
+        <th style="width: 60%;">Асуултууд</th>
+        <th>Бүрэн зөвшөөрнө (1)</th>
+        <th>Зөвшөөрнө (2)</th>
+        <th>Зөвшөөрөхгүй (3)</th>
+        <th>Огт зөвшөөрөхгүй (4)</th>
+      </tr>
+    </thead>
+    <tbody id="selfEsteemQuestions">
+      <!-- Questions will be inserted here by JavaScript -->
+    </tbody>
+  </table>
+
   <div class="survey-nav">
-    <button class="btn btn-success" id="btnSurvey1Next">Дараачийн асуулга руу шилжих</button>
+    <button class="btn btn-success" id="btnSelfEsteemNext">Дараачийн асуулга руу шилжих</button>
   </div>
-  <div class="err hidden" id="survey1Err"></div>
+  <div class="err hidden" id="selfEsteemErr"></div>
 </div>
 
-<!-- ===== 5) SURVEY 2: Emotions ===== -->
-<div class="frame hidden" id="survey2">
-  <div class="survey-title">Сэтгэл Хөдлөл, Мэдрэмжийн Асуулга</div>
-  <div class="survey-intro">
-    Энэхүү асуулга нь тодорхой агшинд төрж буй сэтгэл хөдлөл, мэдрэмжийг тэмдэглэх зорилготой үгсийн жагсаалтаас бүрдсэн болно. Эдгээрээс танд үүсч буй сэтгэл мэдрэмжид тохирсон үзүүлэлтийг сонгоно уу.
-  </div>
-  <div id="survey2Questions"></div>
+<!-- ===== 6) SOCIAL SUPPORT SURVEY ===== -->
+<div class="frame hidden" id="socialSupportSurvey">
+  <div class="survey-title">Нийгмийн Дэмжлэгийн Асуулга</div>
+  
+  <table class="survey-table">
+    <thead>
+      <tr>
+        <th style="width: 60%;">Асуултууд</th>
+        <th>Огт санал нийлэхгүй байна (1)</th>
+        <th>Санал нийлэхгүй байна (2)</th>
+        <th>Бага зэрэг санал нийлэхгүй байна (3)</th>
+        <th>Төвийг сахина (4)</th>
+        <th>Бага зэрэг санал нийлж байна (5)</th>
+        <th>Санал нийлж байна (6)</th>
+        <th>Бүрэн санал нийлж байна (7)</th>
+      </tr>
+    </thead>
+    <tbody id="socialSupportQuestions">
+      <!-- Questions will be inserted here by JavaScript -->
+    </tbody>
+  </table>
+
   <div class="survey-nav">
-    <button class="btn btn-success" id="btnSurvey2Submit">Дуусгах</button>
+    <button class="btn btn-success" id="btnSocialSupportSubmit">Дуусгах</button>
   </div>
-  <div class="err hidden" id="survey2Err"></div>
+  <div class="err hidden" id="socialSupportErr"></div>
 </div>
 
-<!-- ===== 6) COMPLETION (mount) ===== -->
+<!-- ===== 7) COMPLETION ===== -->
 <div id="completionMount"></div>
 
 <script>
 /* ========== Constants & Data ========== */
-const TOTAL_PARTS = 9;
+const TOTAL_PARTS = 10; // 7 IAT parts + 3 survey parts
 
+// IAT Constants
 const SELF_WORDS = ["Би", "надад", "миний", "минийх", "өөрөө"];
 const OTHER_WORDS = ["тэднийг", "тэдний", "тэднийх", "тэдэнд", "тэд"];
 const POS_WORDS = ["гайхамшигтай", "үзэсгэлэнтэй", "сайхан", "сайн", "жаргалтай"];
 const NEG_WORDS = ["Шоовдор", "зовлонтой", "харгис", "аймаар", "ядаргаатай"];
 
-// Instructions for each part
+// Instructions for each IAT part
 const PART_INSTRUCTIONS = [
   // Part 1: Self vs Others
-  "Зүүн гарын дунд эсвэл долоовор хурууг компьютерийн гарны E товчлуур, баруун гарын дунд эсвэл долоовор хурууг компьютерийн гарны I товчлуур дээр тус тус байрлуул. Дэлгэцийн зүүн дээд талд \"Би\", баруун дээд талд \"Тэд\" гэсэн 2 ангилал өгөгдөнө. Дэлгэцийн дээд талд өгөгдсөн хоёр ангилалд хамаарах үгнүүд дэлгэцийн голд нэг нэгээрээ гарч ирнэ. Зүүн талын \"Би\" ангилалд хамаарах үг гарч ирвэл E товчлуурыг; харин баруун талын \"Тэд\" ангилалд хамаарах үг гарч ирвэл I товчлуурыг дар. Үг бүр зөвхөн эдгээрийн аль нэг ангилалд хамаарна. Хэрэв Та алдаа гаргавал дэлгэцийн голд \"Х\" гарч ирнэ. Хэрэв Та алдаа гаргавал зөв товчлуурыг дар. Энэхүү даалгавар нь гүйцэтгэсэн хугацаагаар хэмжигддэг тул \"ЧАДАХ ЧИНЭЭГЭЭРЭЭ ХУРДАН\" мөн аль болох \"АЛДААГҮЙ ГҮЙЦЭТГЭ\". Хэрэв Та хэтэрхий удаан ажиллаж, олон алдаа гаргавал үр дүнг тооцох боломжгүй болно. Даалгаврыг хийж гүйцэтгэхэд ойролцоогоор 5 минут шаардагдана. Танд амжилт хүсье. Та зааврыг ойлгосон бол \"ЗАЙ АВАХ ТОВЧЛУУР\" дарж туршилтыг эхэлнэ.",
+  "Зүүн гарын дунд эсвэл долоовор хурууг компьютерийн гарны E товчлуур, баруун гарын дунд эсвэл долоовор хурууг компьютерийн гарны I товчлуур дээр тус тус байрлуул. Дэлгэцийн зүүн дээд талд \"Би\", баруун дээд талд \"Тэд\" гэсэн 2 ангилал өгөгдөнө. Дэлгэцийн дээд талд өгөгдсөн хоёр ангилалд хамаарах үгнүүд дэлгэцийн голд нэг нэгээрээ гарч ирнэ. Зүүн талын \"Би\" ангилалд хамаарах үг гарч ирвэл E товчлуурыг; харин баруун талын \"Тэд\" ангилалд хамаарах үг гарч ирвэл I товчлуурыг дар. Үг бүр зөвхөн эдгээрийн аль нэг ангилалд хамаарна. Хэрэв Та алдаа гаргавал дэлгэцийн голд \"Х\" гарч ирнэ. Хэрэв Та алдаа гаргавал зөв товчлуурыг дар. Энэхүү даалгавар нь гүйцэтгэсэн хугацаагаар хэмжигддэг тум \"ЧАДАХ ЧИНЭЭГЭЭРЭЭ ХУРДАН\" мөн аль болох \"АЛДААГҮЙ ГҮЙЦЭТГЭ\". Хэрэв Та хэтэрхий удаан ажиллаж, олон алдаа гаргавал үр дүнг тооцох боломжгүй болно. Даалгаврыг хийж гүйцэтгэхэд ойролцоогоор 5 минут шаардагдана. Танд амжилт хүсье. Та зааврыг ойлгосон бол \"ЗАЙ АВАХ ТОВЧЛУУР\" дарж туршилтыг эхэлнэ.",
 
   // Part 2: Positive vs Negative
   "Дэлгэцийн дээд талын өмнөх ангилалууд өөрчлөгдөж дэлгэцийн зүүн дээд талд \"Сайн\", баруун дээд талд \"Муу\" гэсэн 2 ангилал өгөгдсөн байна. Мөн 2 ангилалд хамаарах үгс ч өөрчлөгдсөн. Гэхдээ даалгаврын дүрэм хэвээрээ. Зүүн талын \"Сайн\" ангилалд хамаарах үг гарч ирвэл E товчлуурыг; харин баруун талын \"Муу\" ангилалд хамаарах үг гарч ирвэл I товчлуурыг дар. Үг бүр зөвхөн эдгээрийн аль нэг ангилалд хамаарна. Хэрэв Та алдаа гаргавал дэлгэцийн голд \"Х\" гарч ирнэ. Хэрэв Та алдаа гаргавал зөв товчлуурыг дар. Даалгаврыг \"ЧАДАХ ЧИНЭЭГЭЭРЭЭ ХУРДАН ГҮЙЦЭТГЭ\". Та зааврыг ойлгосон бол \"ЗАЙ АВАХ ТОВЧЛУУР\" дарж туршилтыг эхэлнэ.",
 
   // Part 3: Self+Positive vs Others+Negative
-  "Дэлгэцийн дээд талд өмнө нь тус тусдаа байсан дөрвөн ангилал одоо нийлж, дэлгэцийн зүүн дээд талд \"Би эсвэл Сайн\", \"Бусад эсвэл Муу\" гэсэн бүлэг болон харагдаж байна. Дэлгэцийн голд гарах үг бүр зөвхөн нэг л бүлэгт хамаарна гэдгийг сана. Тухайлбал, хэрэв Би ба Сайн ангиллууд тус тусдаа байсан бол \"Би\"-д хамаарах утгатай үгс \"Сайн\" ангилалд хамаарахгүй байсан бол одоо энэ хоёр ангилал хамтдаа яригдах болно. Дэлгэцийн дээд талд байгаа ногоон ба цагаан ангиллууд болон дэлгэцийн голд гарах үгс тохирох ангилалаа ялгаж танихад тусална. Зүүн, баруун талд байгаа дөрвөн бүлэгт үгнүүдийг ангилахдаа E ба I товчлуурыг ашигла, зөв товчлуурыг дарж алдаагаа зас. Та зааврыг ойлгосон бол \"ЗАЙ АВАХ ТОВЧЛУУР\" дарж туршилтыг эхэлнэ.",
+  "Дэлгэцийн дээд талд өмнө нь тус тусдаа байсан дөрвөн ангилал одоо нийлж, дэлгэцийн зүүн дээд талд \"Би эсвэл Сайн\", \"Бусад эсвэл Муу\" гэсэн бүлэг болон харагдаж байна. Дэлгэцийн голд гарах үг бүр зөвхөн нэг л бүлэгт хамаарна гэдгийг сана. Тухайлбал, хэрэв Би ба Сайн ангиллууд тус тусдаа байсан бол \"Би\"-д хамаарах утгатай үгс \"Сайн\" ангилалд хамаарахгүй байсан бол одоо энэ хоэр ангилал хамтдаа яригдах болно. Дэлгэцийн дээд талд байгаа ногоон ба цагаан ангиллууд болон дэлгэцийн голд гарах үгс тохирох ангилалаа ялгаж танихад тусална. Зүүн, баруун талд байгаа дөрвөн бүлэгт үгнүүдийг ангилахдаа E ба I товчлуурыг ашигла, зөв товчлуурыг дарж алдаагаа зас. Та зааврыг ойлгосон бол \"ЗАЙ АВАХ ТОВЧЛУУР\" дарж туршилтыг эхэлнэ.",
 
   // Part 4: Repeat Self+Positive vs Others+Negative
   "Үгсийг дахин дөрвөн ангилалд хамааруул. Чадах чинээгээрээ хурдан, аль болох алдаагүй гүйцэтгэх ёстойгоо санаарай. Дэлгэцийн дээд талд байгаа ногоон, цагаан ангиллууд болон дэлгэцийн голд гарах үгс тохирох ангилалаа ялган танихад тусална. Зүүн, баруун талд байгаа дөрвөн бүлэгт үгсийг ангилахдаа E ба I товчлуурыг ашигла, хэрэв та алдаа гаргавал зөв товчлуурыг дарж алдаагаа зас. Та зааврыг ойлгосон бол \"ЗАЙ АВАХ ТОВЧЛУУР\" дарж туршилтыг эхэлнэ.",
@@ -195,16 +392,10 @@ const PART_INSTRUCTIONS = [
   "Дэлгэцийн дээд талыг анхаар, зөвхөн хоёр ангилал харагдаж байна, мөн ангилалуудын өмнөх байр нь солигдсон байна. Дэлгэцийн зүүн дээд талд байсан \"Би\" ангилал баруун талд, баруун дээд талд байсан \"Тэд\" ангилал зүүн талд байрласан байна. Энэхүү байр нь солигдсан ангилалтай ажилла. Үгсийг баруун, зүүн тал руу ангилахдаа E ба I товчлуурыг ашигла. Хэрэв та алдаа гаргавал зөв товчлуурыг дарж алдаагаа зас. Та зааврыг ойлгосон бол \"ЗАЙ АВАХ ТОВЧЛУУР\" дарж туршилтыг эхэлнэ.",
 
   // Part 6: Others+Positive vs Self+Negative
-  "Дэлгэцийн дээд тал руу хар, одоо дөрвөн ангилал хоёр хоёроороо нийлж харагдаж байна. Ялгах үг бүр зөвхөн нэг л ангилалд хамаарна гэдгийг санаарай. Дэлгэцийн дээд талд байгаа ногоон, цагаан ангиллууд болон дэлгэцийн голд гарах үгс тохирох ангиллаа ялган танихад тусална. Зүүн, баруун талд байгаа дөрвөн бүлэгт үгсийг ангилахдаа E ба I товчлуурыг ашигла, хэрэв та алдаа гаргавал зөв товчлуурыг дарж алдаагаа зас. Та зааврыг ойлгосон бол \"ЗАЙ АВАХ ТОВЧЛУУР\" дарж туршилтыг эхэлнэ.",
+  "Дэлгэцийн дээд тал руу хар, одоо дөрвөн ангилал хоэр хоёроороо нийлж харагдаж байна. Ялгах үг бүр зөвхөн нэг л ангилалд хамаарна гэдгийг санаарай. Дэлгэцийн дээд талд байгаа ногоон, цагаан ангиллууд болон дэлгэцийн голд гарах үгс тохирох ангиллаа ялган танихад тусална. Зүүн, баруун талд байгаа дөрвөн бүлэгт үгсийг ангилахдаа E ба I товчлуурыг ашигла, хэрэв та алдаа гаргавал зөв товчлуурыг дарж алдаагаа зас. Та зааврыг ойлгосон бол \"ЗАЙ АВАХ ТОВЧЛУУР\" дарж туршилтыг эхэлнэ.",
 
   // Part 7: Repeat Others+Positive vs Self+Negative
-  "Үгсийг дахин дөрвөн ангилалд ялга. Чадах чинээгээрээ хурдан, аль болох алдаагүй гүйцэтгэх ёстойгоо санаарай. Дэлгэцийн дээд талд байгаа ногоон, цагаан нэр ангилалууд болон дэлгэцийн голд гарах үгс тохирох ангилалаа ялган танихад тусална. Зүүн, баруун талд байгаа дөрвөн бүлэгт үгсийг ангилахдаа E ба I товчлуурыг ашигла, хэрэв та алдаа гаргавал зөв товчлуурыг дарж алдаагаа зас. Та зааврыг ойлгосон бол \"ЗАЙ АВАХ ТОВЧЛУУР\" дарж туршилтыг эхэлнэ. Эхлэе",
-
-  // Part 8: Өөрийн Үнэлэмжийн Асуулга
-  "Энэ асуулга нь таны өөрийгөө үнэлэх түвшинг тодорхойлох зорилготой. Та өгүүлбэр бүрийг уншаад өөрт хамгийн ойр санагдсан хариултыг сонгоно уу. Зөв буруу гэсэн хариулт байхгүй учир таны мэдрэмж, бодол хамгийн зөв хариулт болно. Хариулахдаа доорх дөрвөн сонголтоос аль нэгийг тэмдэглэнэ үү.",
-
-  // Part 9: Сэтгэл Хөдлөл, Мэдрэмжийн Асуулга
-  "Энэхүү асуулга нь тодорхой агшинд төрж буй сэтгэл хөдлөл, мэдрэмжийг тэмдэглэх зорилготой үгсийн жагсаалтаас бүрдсэн болно. Эдгээрээс танд үүсч буй сэтгэл мэдрэмжид тохирсон үзүүлэлтийг сонгоно уу."
+  "Үгсийг дахин дөрвөн ангилалд ялга. Чадах чинээгээрээ хурдан, аль болох алдаагүй гүйцэтгэх ёстойгоо санаарай. Дэлгэцийн дээд талд байгаа ногоон, цагаан нэр ангилалууд болон дэлгэцийн голд гарах үгс тохирох ангилалаа ялган танихад тусална. Зүүн, баруун талд байгаа дөрвөн бүлэгт үгсийг ангилахдаа E ба I товчлуурыг ашигла, хэрэв та алдаа гаргавал зөв товчлуурыг дарж алдаагаа зас. Та зааврыг ойлгосон бол \"ЗАЙ АВАХ ТОВЧЛУУР\" дарж туршилтыг эхэлнэ. Эхлэе"
 ];
 
 const PART_CONFIG = [
@@ -214,77 +405,100 @@ const PART_CONFIG = [
   { words: createWordList(SELF_WORDS, 10, OTHER_WORDS, 10, POS_WORDS, 10, NEG_WORDS, 10), leftCat: "Би эсвэл Сайн", rightCat: "Тэд эсвэл Муу", leftWords: SELF_WORDS.concat(POS_WORDS) },
   { words: createWordList(SELF_WORDS, 10, OTHER_WORDS, 10), leftCat: "Тэд", rightCat: "Би", leftWords: OTHER_WORDS },
   { words: createWordList(SELF_WORDS, 5, OTHER_WORDS, 5, POS_WORDS, 5, NEG_WORDS, 5), leftCat: "Тэд эсвэл Сайн", rightCat: "Би эсвэл Муу", leftWords: OTHER_WORDS.concat(POS_WORDS) },
-  { words: createWordList(SELF_WORDS, 10, OTHER_WORDS, 10, POS_WORDS, 10, NEG_WORDS, 10), leftCat: "Тэд эсвэл Сайн", rightCat: "Би эсвэл Муу", leftWords: OTHER_WORDS.concat(POS_WORDS) },
-  
-  // Part 8: Өөрийн Үнэлэмжийн Асуулга (4 сонголттой)
-  { 
-    words: ["A", "B", "C", "D", "A", "B", "C", "D", "A", "B"], 
-    leftCat: "A,B,C,D", 
-    rightCat: "Test", 
-    leftWords: ["A", "B", "C", "D"] 
-  },
-  
-  // Part 9: Сэтгэл Хөдлөл, Мэдрэмжийн Асуулга (5 сонголттой)
-  { 
-    words: ["A", "B", "C", "D", "E", "A", "B", "C", "D", "E"], 
-    leftCat: "A,B,C,D,E", 
-    rightCat: "Test", 
-    leftWords: ["A", "B", "C", "D", "E"] 
-  }
+  { words: createWordList(SELF_WORDS, 10, OTHER_WORDS, 10, POS_WORDS, 10, NEG_WORDS, 10), leftCat: "Тэд эсвэл Сайн", rightCat: "Би эсвэл Муу", leftWords: OTHER_WORDS.concat(POS_WORDS) }
 ];
 
-// Survey 1 Questions - Өөрийн Үнэлэмжийн Асуулга
-const SURVEY1_QUESTIONS = [
-  { q: "1. Би өөртөө бүрэн дүүрэн сэтгэл хангалуун байдаг.", options: ["A) Бүрэн санал нийлж байна", "B) Санал нийлж байна", "C) Санал нийлэхгүй байна", "D) Огт санал нийлэхгүй байна"] },
-  { q: "2. Зарим үед би өөрийгөө голж, огт сайн биш гэж боддог.", options: ["A) Бүрэн санал нийлж байна", "B) Санал нийлж байна", "C) Санал нийлэхгүй байна", "D) Огт санал нийлэхгүй байна"] },
-  { q: "3. Надад хэд хэдэн сайн чанарууд байгаа гэж боддог.", options: ["A) Бүрэн санал нийлж байна", "B) Санал нийлж байна", "C) Санал нийлэхгүй байна", "D) Огт санал нийлэхгүй байна"] },
-  { q: "4. Би бусад хүмүүсийн адил аливаа зүйлийг хийж чаддаг.", options: ["A) Бүрэн санал нийлж байна", "B) Санал нийлж байна", "C) Санал нийлэхгүй байна", "D) Огт санал нийлэхгүй байна"] },
-  { q: "5. Надад бахархах зүйл тийм ч их байдаггүй мэт санагддаг.", options: ["A) Бүрэн санал нийлж байна", "B) Санал нийлж байна", "C) Санал нийлэхгүй байна", "D) Огт санал нийлэхгүй байна"] },
-  { q: "6. Зарим үед би өөрийгөө хэнд ч хэрэггүй юм шиг мэдэрдэг.", options: ["A) Бүрэн санал нийлж байна", "B) Санал нийлж байна", "C) Санал нийлэхгүй байна", "D) Огт санал нийлэхгүй байна"] },
-  { q: "7. Би өөрийгөө үнэ цэнэтэй ядаж бусадтай адил тэгш эрхтэй хүн гэдгээ мэдэрдэг.", options: ["A) Бүрэн санал нийлж байна", "B) Санал нийлэхгүй байна", "C) Санал нийлж байна", "D) Огт санал нийлэхгүй байна"] },
-  { q: "8. Өөртөө илүү хүндэтгэлтэй хандахыг хүсдэг.", options: ["A) Бүрэн санал нийлж байна", "B) Санал нийлж байна", "C) Санал нийлэхгүй байна", "D) Огт санал нийлэхгүй байна"] },
-  { q: "9. Ер нь би өөрийгөө бүтэлгүй хүн гэдгийг мэдрэх хандлагатай.", options: ["A) Бүрэн санал нийлж байна", "B) Санал нийлж байна", "C) Санал нийлэхгүй байна", "D) Огт санал нийлэхгүй байна"] },
-  { q: "10. Би өөртөө нааштай ханддаг.", options: ["A) Бүрэн санал нийлж байна", "B) Санал нийлэх байна", "C) Санал нийлэхгүй байна", "D) Огт санал нийлэхгүй байна"] }
+// Survey Data
+const RESILIENCE_QUESTIONS = [
+  "Би аливаа өөрчлөлтөд дасан зохицож чаддаг",
+  "Надад ойр дотно, аюулгүй харилцаатай хүмүүс байдаг",
+  "Заримдаа хувь тавилан эсвэл бурхан надад тусалдаг",
+  "Надад бэрхшээл тулгарах үед шийдвэрлэж чаддаг",
+  "Өнгөрсөн амжилтууд надад итгэл өгдөг",
+  "Надад асуудал тулгарах үед хөгжилтэй талыг нь харахыг хичээдэг",
+  "Стрессийг даван туулах нь намайг илүү хүчирхэг болгодог",
+  "Өвдөх, гэмтэх юм уу хэцүү зүйлс тохиолдсоны дараа би хэвийн байдалдаа ордог",
+  "Ихэнх зүйлс ямар нэгэн шалтгаантай тохиолддог гэдэгт би итгэдэг",
+  "Ямар ч тохиолдолд би бүх хүчээ дайчилдаг",
+  "Саад бэрхшээл байсан ч би зорилгодоо хүрч чадна гэдэгтээ итгэдэг",
+  "Найдваргүй байсан ч гэсэн би бууж өгдөггүй",
+  "Стресстэх үедээ хаанаас тусламж авахаа би мэддэг",
+  "Ачаалалтай үед, би анхаарлаа төвлөрүүлж тодорхой бодож сэтгэдэг",
+  "Асуудал шийдвэрлэхэд би удирдлагыг гартаа авахыг илүүд үздэг",
+  "Би бүтэлгүйтэлд амархан шантардаггүй",
+  "Амьдралын сорилт, бэрхшээлийг шийдвэрлэхдээ би өөрийгөө хүчтэй гэж боддог",
+  "Би ердийн бус, хэцүү шийдвэрүүдийг гаргаж чаддаг",
+  "Би таагүй эсвэл шаналгаатай мэдрэмжүүд болох гуниг, айдас, уураа зохицуулж чаддаг",
+  "Аливааг зөн совингоороо хийх хэрэгтэй үе надад байдаг",
+  "Миний амьдрал утга учиртай санагддаг",
+  "Би өөрийгөө хянаж чаддаг юм шиг санагддаг",
+  "Би сорилтод дуртай",
+  "Би зорилгодоо хүрэхийн тулд хичээж ажилладаг",
+  "Би өөрийн амжилтаараа бахархдаг"
 ];
 
-// Survey 2 Questions - Сэтгэл Хөдлөл, Мэдрэмжийн Асуулга
-const SURVEY2_QUESTIONS = [
-  { q: "1. Шимтэн автах", options: ["A) Огт үгүй", "B) Бага зэрэг", "C) Дунд зэрэг", "D) Хүчтэй", "E) Их хүчтэй"] },
-  { q: "2. Дарамт үүсэх", options: ["A) Огт үгүй", "B) Бага зэрэг", "C) Дунд зэрэг", "D) Хүчтэй", "E) Их хүчтэй"] },
-  { q: "3. Баяр баясгалантай болох", options: ["A) Огт үгүй", "B) Бага зэрэг", "C) Дунд зэрэг", "D) Хүчтэй", "E) Их хүчтэй"] },
-  { q: "4. Таагүй мэдрэмж үүсэх", options: ["A) Огт үгүй", "B) Бага зэрэг", "C) Дунд зэрэг", "D) Хүчтэй", "E) Их хүчтэй"] },
-  { q: "5. Эрч хүч дүүрэн болох", options: ["A) Огт үгүй", "B) Бага зэрэг", "C) Дунд зэрэг", "D) Хүчтэй", "E) Их хүчтэй"] },
-  { q: "6. Гэм буруутай мэт санагдах", options: ["A) Огт үгүй", "B) Бага зэрэг", "C) Дунд зэрэг", "D) Хүчтэй", "E) Их хүчтэй"] },
-  { q: "7. Айдас төрөх", options: ["A) Огт үгүй", "B) Бага зэрэг", "C) Дунд зэрэг", "D) Хүчтэй", "E) Их хүчтэй"] },
-  { q: "8. Бухимдал үүсэх", options: ["A) Огт үгүй", "B) Бага зэрэг", "C) Дунд зэрэг", "D) Хүчтэй", "E) Их хүчтэй"] },
-  { q: "9. Сонирхол төрөх", options: ["A) Огт үгүй", "B) Бага зэрэг", "C) Дунд зэрэг", "D) Хүчтэй", "E) Их хүчтэй"] },
-  { q: "10. Өөртөө итгэлтэй болох", options: ["A) Огт үгүй", "B) Бага зэрэг", "C) Дунд зэрэг", "D) Хүчтэй", "E) Их хүчтэй"] },
-  { q: "11. Ундууцал төрөх", options: ["A) Огт үгүй", "B) Бага зэрэг", "C) Дунд зэрэг", "D) Хүчтэй", "E) Их хүчтэй"] },
-  { q: "12. Төвлөрөх", options: ["A) Огт үгүй", "B) Бага зэрэг", "C) Дунд зэрэг", "D) Хүчтэй", "E) Их хүчтэй"] },
-  { q: "13. Ичих, эмээх сэтгэл төрөх", options: ["A) Огт үгүй", "B) Бага зэрэг", "C) Дунд зэрэг", "D) Хүчтэй", "E) Их хүчтэй"] },
-  { q: "14. Онгод орсон мэт буюу хөглөгдөх", options: ["A) Огт үгүй", "B) Бага зэрэг", "C) Дунд зэрэг", "D) Хүчтэй", "E) Их хүчтэй"] },
-  { q: "15. Ууртай болох", options: ["A) Огт үгүй", "B) Бага зэрэг", "C) Дунд зэрэг", "D) Хүчтэй", "E) Их хүчтэй"] },
-  { q: "16. Шийдэмгий болох", options: ["A) Огт үгүй", "B) Бага зэрэг", "C) Дунд зэрэг", "D) Хүчтэй", "E) Их хүчтэй"] },
-  { q: "17. Тогтож анзаарах", options: ["A) Огт үгүй", "B) Бага зэрэг", "C) Дунд зэрэг", "D) Хүчтэй", "E) Их хүчтэй"] },
-  { q: "18. Тайван биш болох", options: ["A) Огт үгүй", "B) Бага зэрэг", "C) Дунд зэрэг", "D) Хүчтэй", "E) Их хүчтэй"] },
-  { q: "19. Эрүүл, саруул байдлыг мэдрэх", options: ["A) Огт үгүй", "B) Бага зэрэг", "C) Дунд зэрэг", "D) Хүчтэй", "E) Их хүчтэй"] },
-  { q: "20. Түшүүр төрөх", options: ["A) Огт үгүй", "B) Бага зэрэг", "C) Дунд зэрэг", "D) Хүчтэй", "E) Их хүчтэй"] }
+const SELF_ESTEEM_QUESTIONS = [
+  "Би ерөнхийдөө өөртөө сэтгэл хангалуун байдаг.",
+  "Би заримдаа өөрийгөө бүх зүйлд тийм ч сайн биш гэж боддог.",
+  "Надад хэд хэдэн сайн чанар байдаг.",
+  "Би бусад хүмүүсийн адил аливаа зүйлийг сайн хийж чадна.",
+  "Надад нэг их бахархмаар зүйл байхгүй.",
+  "Би заримдаа хэнд ч хэрэггүй юм шиг санагддаг.",
+  "Би өөрийгөө бусадтай эн зэрэгцэх үнэ цэнтэй хүн гэдгээ мэдэрдэг.",
+  "Би өөрийгөө илүү их хүндэлдэг байхыг хүсэж байна.",
+  "Би ерөнхийдөө өөрийгөө бүтэл муутай хүн гэж боддог.",
+  "Би өөртөө эерэг ханддаг."
+];
+
+const SOCIAL_SUPPORT_QUESTIONS = [
+  "Хэрэгтэй үед хажууд байж тусалдаг дотны хүн надад байдаг.",
+  "Жаргал зовлонгоо хуваалцдаг дотны хүн надад байдаг.",
+  "Манай гэр бүлийнхэн надад туслахыг үнэхээр их хичээдэг.",
+  "Би гэр бүлээсээ сэтгэл зүйн дэмжлэг, тусламж авдаг.",
+  "Надад тав тухтай байдлыг мэдрүүлдэг, намайг тайтгаруулдаг дотны хүн бий.",
+  "Найзууд маань надад туслахыг үнэхээр их хичээдэг.",
+  "Би хэцүү байдалд орох үедээ найзууддаа найдаж чаддаг",
+  "Би гэр бүлтэйгээ асуудлаа ярилцаж чаддаг.",
+  "Би жаргал, зовлонгоо найзуудтайгаа хуваалцаж чаддаг.",
+  "Миний сэтгэл хөдлөл, мэдрэмжийг ойлгож, анхаардаг дотны хүн надад бий.",
+  "Аливаа шийдвэр гаргахад манай гэр бүлийнхэн надад туслахад бэлэн байдаг.",
+  "Би асуудлаа найзуудтайгаа ярилцаж чаддаг."
 ];
 
 /* ========== State ========== */
-const setup = document.getElementById('setup');
+// DOM elements
+const consentForm = document.getElementById('consentForm');
+const demographicSurvey = document.getElementById('demographicSurvey');
 const intro = document.getElementById('intro');
 const stage = document.getElementById('stage');
-const survey1 = document.getElementById('survey1');
-const survey2 = document.getElementById('survey2');
-const errEl = document.getElementById('setupErr');
-const pidEl = document.getElementById('pid');
-const ageEl = document.getElementById('age');
-const genderEl = document.getElementById('gender');
+const resilienceSurvey = document.getElementById('resilienceSurvey');
+const selfEsteemSurvey = document.getElementById('selfEsteemSurvey');
+const socialSupportSurvey = document.getElementById('socialSupportSurvey');
+
+const consentCheckbox = document.getElementById('consentCheckbox');
+const btnConsentNext = document.getElementById('btnConsentNext');
+const btnDemographicNext = document.getElementById('btnDemographicNext');
+const btnStart = document.getElementById('btnStart');
+const btnResilienceNext = document.getElementById('btnResilienceNext');
+const btnSelfEsteemNext = document.getElementById('btnSelfEsteemNext');
+const btnSocialSupportSubmit = document.getElementById('btnSocialSupportSubmit');
+
+const demographicErr = document.getElementById('demographicErr');
+const resilienceErr = document.getElementById('resilienceErr');
+const selfEsteemErr = document.getElementById('selfEsteemErr');
+const socialSupportErr = document.getElementById('socialSupportErr');
+
 const completionMount = document.getElementById('completionMount');
 
-const participant = { id:"", age:null, gender:"", body_position:"" };
+const participant = { 
+  age: null, 
+  gender: "",
+  school: "",
+  studyLevel: "",
+  traits: []
+};
 
+// IAT State Variables
 let currentPart = 0;
 let i = 0;
 let SEQ = [];
@@ -297,10 +511,115 @@ let testFinishedAt = null;
 
 let records = [];
 let trialIndex = 0;
-let survey1Answers = {};
-let survey2Answers = {};
 
-/* ========== Helpers ========== */
+// Survey Answers
+let resilienceAnswers = {};
+let selfEsteemAnswers = {};
+let socialSupportAnswers = {};
+
+/* ========== Statistical Functions ========== */
+function calculateMean(values) {
+  if (values.length === 0) return 0;
+  const sum = values.reduce((a, b) => a + b, 0);
+  return sum / values.length;
+}
+
+// Population Standard Deviation (N хуваарьтай)
+function calculatePopulationStandardDeviation(values) {
+  if (values.length === 0) return 0;
+  const mean = calculateMean(values);
+  const squareDiffs = values.map(value => Math.pow(value - mean, 2));
+  const sumSquareDiffs = squareDiffs.reduce((a, b) => a + b, 0);
+  return Math.sqrt(sumSquareDiffs / values.length);
+}
+
+// Sample Standard Deviation (N-1 хуваарьтай) 
+function calculateSampleStandardDeviation(values) {
+  if (values.length <= 1) return 0;
+  const mean = calculateMean(values);
+  const squareDiffs = values.map(value => Math.pow(value - mean, 2));
+  const sumSquareDiffs = squareDiffs.reduce((a, b) => a + b, 0);
+  return Math.sqrt(sumSquareDiffs / (values.length - 1));
+}
+
+function calculatePartStatistics(partNumber) {
+  const partRecords = records.filter(record => record.part_index === partNumber && record.correct === 1);
+  const reactionTimes = partRecords.map(record => record.rt_ms);
+  
+  return {
+    mean: calculateMean(reactionTimes),
+    stdDev: calculatePopulationStandardDeviation(reactionTimes), // Population SD ашиглах
+    sampleStdDev: calculateSampleStandardDeviation(reactionTimes), // Sample SD
+    count: partRecords.length,
+    totalTrials: records.filter(record => record.part_index === partNumber).length,
+    accuracy: partRecords.length / records.filter(record => record.part_index === partNumber).length * 100
+  };
+}
+
+// IAT Score Calculation (D-score) - ЗАСВАРЛАСАН
+function calculateIATScore() {
+  // Зөвхөн 5, 7-р хэсгийн зөв хариултуудыг авна
+  const part5Records = records.filter(r => r.part_index === 5 && r.correct === 1);
+  const part7Records = records.filter(r => r.part_index === 7 && r.correct === 1);
+  
+  const part5ReactionTimes = part5Records.map(r => r.rt_ms);
+  const part7ReactionTimes = part7Records.map(r => r.rt_ms);
+  
+  // Хэсэг бүрийн статистик
+  const part5Stats = {
+    mean: calculateMean(part5ReactionTimes),
+    stdDev: calculatePopulationStandardDeviation(part5ReactionTimes),
+    count: part5Records.length,
+    accuracy: part5Records.length / records.filter(r => r.part_index === 5).length * 100
+  };
+  
+  const part7Stats = {
+    mean: calculateMean(part7ReactionTimes),
+    stdDev: calculatePopulationStandardDeviation(part7ReactionTimes),
+    count: part7Records.length,
+    accuracy: part7Records.length / records.filter(r => r.part_index === 7).length * 100
+  };
+  
+  console.log('Part 5 statistics:', part5Stats);
+  console.log('Part 7 statistics:', part7Stats);
+  
+  // Зөв D-score тооцоо: (M7 - M5) / стандарт хазайлт
+  const mean5 = part5Stats.mean;
+  const mean7 = part7Stats.mean;
+  
+  // ЗӨВЧЛӨЛТ: Зөвхөн 5, 7-р хэсгийн өгөгдлөөр стандарт хазайлтыг тооцоолно
+  const allReactionTimes = [...part5ReactionTimes, ...part7ReactionTimes];
+  const pooledStdDev = calculatePopulationStandardDeviation(allReactionTimes);
+  
+  // Зөв D-score тооцоо: (M7 - M5) / стандарт хазайлт
+  const dScore = pooledStdDev > 0 ? (mean7 - mean5) / pooledStdDev : 0;
+  
+  console.log('D-score calculation:', {
+    mean5: mean5,
+    mean7: mean7,
+    mean7_minus_mean5: mean7 - mean5,
+    pooledStdDev: pooledStdDev,
+    dScore: dScore
+  });
+  
+  return {
+    dScore: dScore,
+    part5: part5Stats,
+    part7: part7Stats,
+    pooledStdDev: pooledStdDev,
+    interpretation: interpretIATScore(dScore)
+  };
+}
+
+function interpretIATScore(dScore) {
+  if (dScore < -0.65) return "Тэднийг илүүд үздэг";
+  if (dScore < -0.35) return "Тэднийг бага зэрэг илүүд үздэг";
+  if (dScore < 0.35) return "Төвийг сахисан";
+  if (dScore < 0.65) return "Өөрийгөө бага зэрэг илүүд үздэг";
+  return "Өөрийгөө илүүд үздэг";
+}
+
+/* ========== Helper Functions ========== */
 function shuffle(a){
   const arr = a.slice();
   for(let j=arr.length-1;j>0;j--){
@@ -321,28 +640,102 @@ function createWordList(...args) {
   return result;
 }
 
-function showErr(msg){ errEl.textContent = msg; errEl.classList.remove('hidden'); }
-function hideErr(){ errEl.classList.add('hidden'); }
+function showDemographicError(message) {
+  demographicErr.textContent = message;
+  demographicErr.classList.remove('hidden');
+}
 
-/* ========== Flow ========== */
-window.goIntro = function(){
-  const id = (pidEl.value||"").trim();
-  const age = parseInt(ageEl.value,10);
-  const bodyPosition = document.getElementById('body_position').value;
-  if(!id){ showErr('ID / Нэр заавал оруулна.'); return; }
-  if(!Number.isFinite(age) || age<5 || age>120){ showErr('Насыг 5–120 хооронд оруулна уу.'); return; }
-  participant.id=id; 
-  participant.age=age; 
-  participant.gender=(genderEl.value||'');
-  participant.body_position=bodyPosition;
+function hideDemographicError() {
+  demographicErr.classList.add('hidden');
+}
+
+/* ========== Flow Control ========== */
+// Эхлэх үед зөвхөн зөвшөөрлийн форм харагдана
+window.addEventListener('DOMContentLoaded', function() {
+  demographicSurvey.classList.add('hidden');
+  intro.classList.add('hidden');
+  stage.classList.add('hidden');
+  resilienceSurvey.classList.add('hidden');
+  selfEsteemSurvey.classList.add('hidden');
+  socialSupportSurvey.classList.add('hidden');
+  consentForm.classList.remove('hidden');
+  testStartedAt = new Date().toISOString();
+});
+
+// Зөвшөөрлийн товчлуурыг идэвхжүүлэх
+consentCheckbox.addEventListener('change', function() {
+  btnConsentNext.disabled = !this.checked;
+});
+
+// Next товчлуур (зөвшөөрөл)
+btnConsentNext.addEventListener('click', function() {
+  consentForm.classList.add('hidden');
+  demographicSurvey.classList.remove('hidden');
+});
+
+// Демографик судалгааны Next товчлуур
+btnDemographicNext.addEventListener('click', function() {
+  // Баталгаажуулалт шалгах
+  const age = document.getElementById('surveyAge').value;
+  const gender = document.querySelector('input[name="gender"]:checked');
+  const school = document.getElementById('surveySchool').value;
+  const studyLevel = document.querySelector('input[name="studyLevel"]:checked');
+  const selectedTraits = document.querySelectorAll('input[name="traits"]:checked');
   
-  hideErr();
-  setup.classList.add('hidden');
+  if (!age) {
+    showDemographicError('Насаа оруулна уу');
+    return;
+  }
+  
+  if (!gender) {
+    showDemographicError('Хүйсээ сонгоно уу');
+    return;
+  }
+  
+  if (!school.trim()) {
+    showDemographicError('Сургууль, салбараа оруулна уу');
+    return;
+  }
+  
+  if (!studyLevel) {
+    showDemographicError('Сурлагын түвшингээ сонгоно уу');
+    return;
+  }
+  
+  if (selectedTraits.length < 8) {
+    showDemographicError('Хамгийн багадаа 8 шинж чанар сонгоно уу');
+    return;
+  }
+  
+  // Демографик мэдээллийг хадгалах
+  participant.age = age;
+  participant.gender = gender.value;
+  participant.school = school;
+  participant.studyLevel = studyLevel.value;
+  participant.traits = Array.from(selectedTraits).map(trait => trait.value);
+  
+  // IAT тест эхлүүлэх
+  demographicSurvey.classList.add('hidden');
   startStage();
-};
+});
 
+// Демографик оролтуудыг ажиглах
+document.getElementById('surveyAge').addEventListener('input', hideDemographicError);
+document.querySelectorAll('input[name="gender"]').forEach(input => {
+  input.addEventListener('change', hideDemographicError);
+});
+document.getElementById('surveySchool').addEventListener('input', hideDemographicError);
+document.querySelectorAll('input[name="studyLevel"]').forEach(input => {
+  input.addEventListener('change', hideDemographicError);
+});
+document.querySelectorAll('input[name="traits"]').forEach(input => {
+  input.addEventListener('change', function() {
+    hideDemographicError();
+  });
+});
+
+/* ========== IAT Functions ========== */
 function startStage(){
-  if(!testStartedAt) testStartedAt = new Date().toISOString();
   currentPart = 0;
   showIntroForPart();
 }
@@ -350,8 +743,9 @@ function startStage(){
 function showIntroForPart(){
   intro.classList.remove('hidden');
   stage.classList.add('hidden');
-  survey1.classList.add('hidden');
-  survey2.classList.add('hidden');
+  resilienceSurvey.classList.add('hidden');
+  selfEsteemSurvey.classList.add('hidden');
+  socialSupportSurvey.classList.add('hidden');
   
   const config = PART_CONFIG[currentPart];
   document.getElementById('introPartLabel').textContent = `Part ${currentPart+1} of ${TOTAL_PARTS}`;
@@ -362,102 +756,21 @@ function showIntroForPart(){
 
 function startPart(){
   intro.classList.add('hidden');
-  stage.classList.add('hidden');
-  survey1.classList.add('hidden');
-  survey2.classList.add('hidden');
+  stage.classList.remove('hidden');
+  resilienceSurvey.classList.add('hidden');
+  selfEsteemSurvey.classList.add('hidden');
+  socialSupportSurvey.classList.add('hidden');
   
-  if(currentPart === 7) { // Part 8: Өөрийн Үнэлэмжийн Асуулга
-    showSurvey1();
-  } else if(currentPart === 8) { // Part 9: Сэтгэл Хөдлөл, Мэдрэмжийн Асуулга
-    showSurvey2();
-  } else {
-    stage.classList.remove('hidden');
-    const config = PART_CONFIG[currentPart];
-    document.getElementById('partLabel').textContent = `Part ${currentPart+1} of ${TOTAL_PARTS}`;
-    document.getElementById('stageLeftCategory').textContent = config.leftCat;
-    document.getElementById('stageRightCategory').textContent = config.rightCat;
-    SEQ = shuffle(config.words);
-    i = 0;
-    needCorrection = false;
-    showWord();
-  }
+  const config = PART_CONFIG[currentPart];
+  document.getElementById('partLabel').textContent = `Part ${currentPart+1} of ${TOTAL_PARTS}`;
+  document.getElementById('stageLeftCategory').textContent = config.leftCat;
+  document.getElementById('stageRightCategory').textContent = config.rightCat;
+  SEQ = shuffle(config.words);
+  i = 0;
+  needCorrection = false;
+  showWord();
 }
 
-function showSurvey1() {
-  survey1.classList.remove('hidden');
-  const container = document.getElementById('survey1Questions');
-  container.innerHTML = '';
-  
-  SURVEY1_QUESTIONS.forEach((question, index) => {
-    const questionEl = document.createElement('div');
-    questionEl.className = 'survey-question';
-    questionEl.innerHTML = `
-      <div class="survey-question-text">${question.q}</div>
-      <div class="survey-options">
-        ${question.options.map(option => `
-          <div class="survey-option">
-            <input type="radio" id="s1q${index}_${option.charAt(0)}" name="s1q${index}" value="${option.charAt(0)}">
-            <label for="s1q${index}_${option.charAt(0)}">${option}</label>
-          </div>
-        `).join('')}
-      </div>
-    `;
-    container.appendChild(questionEl);
-  });
-}
-
-function showSurvey2() {
-  survey2.classList.remove('hidden');
-  const container = document.getElementById('survey2Questions');
-  container.innerHTML = '';
-  
-  SURVEY2_QUESTIONS.forEach((question, index) => {
-    const questionEl = document.createElement('div');
-    questionEl.className = 'survey-question';
-    questionEl.innerHTML = `
-      <div class="survey-question-text">${question.q}</div>
-      <div class="survey-options">
-        ${question.options.map(option => `
-          <div class="survey-option">
-            <input type="radio" id="s2q${index}_${option.charAt(0)}" name="s2q${index}" value="${option.charAt(0)}">
-            <label for="s2q${index}_${option.charAt(0)}">${option}</label>
-          </div>
-        `).join('')}
-      </div>
-    `;
-    container.appendChild(questionEl);
-  });
-}
-
-function collectSurvey1Answers() {
-  const answers = {};
-  SURVEY1_QUESTIONS.forEach((_, index) => {
-    const selected = document.querySelector(`input[name="s1q${index}"]:checked`);
-    answers[`q${index + 1}`] = selected ? selected.value : '';
-  });
-  return answers;
-}
-
-function collectSurvey2Answers() {
-  const answers = {};
-  SURVEY2_QUESTIONS.forEach((_, index) => {
-    const selected = document.querySelector(`input[name="s2q${index}"]:checked`);
-    answers[`q${index + 1}`] = selected ? selected.value : '';
-  });
-  return answers;
-}
-
-function endPhase(){
-  if(currentPart < TOTAL_PARTS-1){
-    currentPart++;
-    showIntroForPart();
-  }else{
-    testFinishedAt = new Date().toISOString();
-    finalizeResults();
-  }
-}
-
-/* ========== Stimulus & Answer ========== */
 function showWord(){
   const wordEl = document.getElementById('stimulusWord');
   const errX = document.getElementById('errorX');
@@ -523,7 +836,6 @@ document.addEventListener('keydown',(e)=>{
   if(e.code==='Space'){
     if(!intro.classList.contains('hidden')){ e.preventDefault(); startPart(); return; }
   }
-  if(e.code==='Enter' && !setup.classList.contains('hidden')){ e.preventDefault(); window.goIntro(); return; }
 
   if(stage.classList.contains('hidden')) return;
 
@@ -533,42 +845,167 @@ document.addEventListener('keydown',(e)=>{
   }
 });
 
-// Survey navigation
-document.getElementById('btnSurvey1Next').addEventListener('click', function(){
-  survey1Answers = collectSurvey1Answers();
-  const allAnswered = Object.values(survey1Answers).every(answer => answer !== '');
-  if(!allAnswered) {
-    document.getElementById('survey1Err').textContent = 'Бүх асуултанд хариулна уу!';
-    document.getElementById('survey1Err').classList.remove('hidden');
-    return;
-  }
-  document.getElementById('survey1Err').classList.add('hidden');
-  currentPart++;
-  showIntroForPart();
-});
+btnStart.addEventListener('click', (e)=>{ e.preventDefault(); startPart(); });
 
-document.getElementById('btnSurvey2Submit').addEventListener('click', function(){
-  survey2Answers = collectSurvey2Answers();
-  const allAnswered = Object.values(survey2Answers).every(answer => answer !== '');
-  if(!allAnswered) {
-    document.getElementById('survey2Err').textContent = 'Бүх асуултанд хариулна уу!';
-    document.getElementById('survey2Err').classList.remove('hidden');
+function endPhase(){
+  if(currentPart < 6){ // IAT parts (0-6)
+    currentPart++;
+    showIntroForPart();
+  } else if (currentPart === 6) { // Last IAT part, move to surveys
+    currentPart++;
+    showResilienceSurvey();
+  } else if (currentPart < TOTAL_PARTS-1) {
+    currentPart++;
+    // Show appropriate survey based on current part
+    if (currentPart === 8) {
+      showSelfEsteemSurvey();
+    } else if (currentPart === 9) {
+      showSocialSupportSurvey();
+    }
+  } else {
+    testFinishedAt = new Date().toISOString();
+    finalizeResults();
+  }
+}
+
+/* ========== Survey Functions ========== */
+function showResilienceSurvey() {
+  stage.classList.add('hidden');
+  intro.classList.add('hidden');
+  resilienceSurvey.classList.remove('hidden');
+  
+  const container = document.getElementById('resilienceQuestions');
+  container.innerHTML = '';
+  
+  RESILIENCE_QUESTIONS.forEach((question, index) => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td style="text-align: left; padding: 12px;">${question}</td>
+      <td><input type="radio" name="resilience_q${index}" value="0"></td>
+      <td><input type="radio" name="resilience_q${index}" value="1"></td>
+      <td><input type="radio" name="resilience_q${index}" value="2"></td>
+      <td><input type="radio" name="resilience_q${index}" value="3"></td>
+      <td><input type="radio" name="resilience_q${index}" value="4"></td>
+    `;
+    container.appendChild(row);
+  });
+}
+
+function collectResilienceAnswers() {
+  const answers = {};
+  RESILIENCE_QUESTIONS.forEach((_, index) => {
+    const selected = document.querySelector(`input[name="resilience_q${index}"]:checked`);
+    answers[`q${index + 1}`] = selected ? selected.value : '';
+  });
+  return answers;
+}
+
+btnResilienceNext.addEventListener('click', function() {
+  resilienceAnswers = collectResilienceAnswers();
+  const allAnswered = Object.values(resilienceAnswers).every(answer => answer !== '');
+  if (!allAnswered) {
+    resilienceErr.textContent = 'Бүх асуултанд хариулна уу!';
+    resilienceErr.classList.remove('hidden');
     return;
   }
-  document.getElementById('survey2Err').classList.add('hidden');
+  resilienceErr.classList.add('hidden');
+  resilienceSurvey.classList.add('hidden');
   endPhase();
 });
 
-document.getElementById('btnStart').addEventListener('click', (e)=>{ e.preventDefault(); startPart(); });
+function showSelfEsteemSurvey() {
+  selfEsteemSurvey.classList.remove('hidden');
+  
+  const container = document.getElementById('selfEsteemQuestions');
+  container.innerHTML = '';
+  
+  SELF_ESTEEM_QUESTIONS.forEach((question, index) => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td style="text-align: left; padding: 12px;">${question}</td>
+      <td><input type="radio" name="selfesteem_q${index}" value="1"></td>
+      <td><input type="radio" name="selfesteem_q${index}" value="2"></td>
+      <td><input type="radio" name="selfesteem_q${index}" value="3"></td>
+      <td><input type="radio" name="selfesteem_q${index}" value="4"></td>
+    `;
+    container.appendChild(row);
+  });
+}
+
+function collectSelfEsteemAnswers() {
+  const answers = {};
+  SELF_ESTEEM_QUESTIONS.forEach((_, index) => {
+    const selected = document.querySelector(`input[name="selfesteem_q${index}"]:checked`);
+    answers[`q${index + 1}`] = selected ? selected.value : '';
+  });
+  return answers;
+}
+
+btnSelfEsteemNext.addEventListener('click', function() {
+  selfEsteemAnswers = collectSelfEsteemAnswers();
+  const allAnswered = Object.values(selfEsteemAnswers).every(answer => answer !== '');
+  if (!allAnswered) {
+    selfEsteemErr.textContent = 'Бүх асуултанд хариулна уу!';
+    selfEsteemErr.classList.remove('hidden');
+    return;
+  }
+  selfEsteemErr.classList.add('hidden');
+  selfEsteemSurvey.classList.add('hidden');
+  endPhase();
+});
+
+function showSocialSupportSurvey() {
+  socialSupportSurvey.classList.remove('hidden');
+  
+  const container = document.getElementById('socialSupportQuestions');
+  container.innerHTML = '';
+  
+  SOCIAL_SUPPORT_QUESTIONS.forEach((question, index) => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td style="text-align: left; padding: 12px;">${question}</td>
+      <td><input type="radio" name="socialsupport_q${index}" value="1"></td>
+      <td><input type="radio" name="socialsupport_q${index}" value="2"></td>
+      <td><input type="radio" name="socialsupport_q${index}" value="3"></td>
+      <td><input type="radio" name="socialsupport_q${index}" value="4"></td>
+      <td><input type="radio" name="socialsupport_q${index}" value="5"></td>
+      <td><input type="radio" name="socialsupport_q${index}" value="6"></td>
+      <td><input type="radio" name="socialsupport_q${index}" value="7"></td>
+    `;
+    container.appendChild(row);
+  });
+}
+
+function collectSocialSupportAnswers() {
+  const answers = {};
+  SOCIAL_SUPPORT_QUESTIONS.forEach((_, index) => {
+    const selected = document.querySelector(`input[name="socialsupport_q${index}"]:checked`);
+    answers[`q${index + 1}`] = selected ? selected.value : '';
+  });
+  return answers;
+}
+
+btnSocialSupportSubmit.addEventListener('click', function() {
+  socialSupportAnswers = collectSocialSupportAnswers();
+  const allAnswered = Object.values(socialSupportAnswers).every(answer => answer !== '');
+  if (!allAnswered) {
+    socialSupportErr.textContent = 'Бүх асуултанд хариулна уу!';
+    socialSupportErr.classList.remove('hidden');
+    return;
+  }
+  socialSupportErr.classList.add('hidden');
+  endPhase();
+});
 
 /* ========== Discord Webhook ========== */
-const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1423318153684975676/EJYgrau1Cp8V2gjcHPKFVF7U08h-o6yK_wMPw2_CrYVfNZqrzNP4BsP8UUIE-Cc50YZ3";
+const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1441814169317019772/XqAGE1d0VzJplDiYpC1kjg8XU5yNdPsMz9M1uMSWJbAyG7u7ly63G3TXOxPNc118Y82Q";
 
 /** Discord Webhook-оор мэдээ илгээх */
 async function sendToDiscord(payload) {
   try {
     const participant = payload.participant_data;
     const records = payload.test_records;
+    const iatScore = payload.iat_score;
     
     // Зөв/буруу хариултыг тоолох
     const correctAnswers = records.filter(r => r.correct === 1).length;
@@ -585,7 +1022,7 @@ async function sendToDiscord(payload) {
           fields: [
             {
               name: "👤 Оролцогч",
-              value: `**Нэр:** ${participant.participant}\n**Нас:** ${participant.age}\n**Хүйс:** ${participant.gender || 'Тодорхойгүй'}\n**Биений байрлал:** ${participant.body_position || 'Тодорхойгүй'}`,
+              value: `**Нас:** ${participant.age}\n**Хүйс:** ${participant.gender || 'Тодорхойгүй'}\n**Сургууль:** ${participant.school || 'Тодорхойгүй'}\n**Түвшин:** ${participant.studyLevel || 'Тодорхойгүй'}\n**Шинж чанарууд:** ${participant.traits ? participant.traits.length : 0}`,
               inline: true
             },
             {
@@ -594,18 +1031,18 @@ async function sendToDiscord(payload) {
               inline: true
             },
             {
-              name: "📈 Үр дүн",
-              value: `**Нийт:** ${payload.meta.total_records}\n**Зөв:** ${correctAnswers}\n**Алдаа:** ${wrongAnswers}\n**Нарийвчлал:** ${accuracy}%`,
+              name: "📈 IAT Үр дүн",
+              value: `**Нийт:** ${records.length}\n**Зөв:** ${correctAnswers}\n**Алдаа:** ${wrongAnswers}\n**Нарийвчлал:** ${accuracy}%\n**IAT Оноо:** ${iatScore.dScore.toFixed(6)}\n**Тайлбар:** ${iatScore.interpretation}`,
               inline: true
             },
             {
               name: "📝 Асуулга",
-              value: `**Өөрийн Үнэлэмж:** ${Object.keys(payload.meta.survey1 || {}).length}/10\n**Сэтгэл Хөдлөл:** ${Object.keys(payload.meta.survey2 || {}).length}/20`,
+              value: `**Давширлын асуулга:** ${Object.keys(payload.meta.resilience || {}).length}/${RESILIENCE_QUESTIONS.length}\n**Өөрийн Үнэлэмж:** ${Object.keys(payload.meta.self_esteem || {}).length}/${SELF_ESTEEM_QUESTIONS.length}\n**Нийгмийн Дэмжлэг:** ${Object.keys(payload.meta.social_support || {}).length}/${SOCIAL_SUPPORT_QUESTIONS.length}`,
               inline: true
             }
           ],
           footer: {
-            text: `ID: ${participant.participant} • ${new Date().toLocaleString('mn-MN')}`
+            text: `Судалгаа • ${new Date().toLocaleString('mn-MN')}`
           },
           timestamp: new Date().toISOString()
         }
@@ -646,7 +1083,7 @@ async function sendCSVToDiscord(csvData, filename, participantInfo) {
     
     // Message бэлтгэх
     const messagePayload = {
-      content: `📁 **CSV ФАЙЛ**\n**Файл:** ${filename}\n**Оролцогч:** ${participantInfo.participant}\n**Хугацаа:** ${new Date().toLocaleString('mn-MN')}`
+      content: `📁 **CSV ФАЙЛ**\n**Файл:** ${filename}\n**Оролцогч:** ${participantInfo.age} настай, ${participantInfo.gender}\n**Хугацаа:** ${new Date().toLocaleString('mn-MN')}`
     };
     
     formData.append('payload_json', JSON.stringify(messagePayload));
@@ -675,6 +1112,9 @@ async function sendCSVToDiscord(csvData, filename, participantInfo) {
 const UTF8_BOM = "\uFEFF";
 
 function toCSV(rows){
+  // Calculate IAT score
+  const iatScore = calculateIATScore();
+  
   const cols = [
     'idx','part_index','phase_name','part_trial_idx',
     'word','expected_key','pressed_key','correct','rt_ms'
@@ -686,53 +1126,53 @@ function toCSV(rows){
   ).join('\n');
 
   const metaLine =
-    `participant_id=${participant.id},age=${participant.age},gender=${participant.gender},body_position=${participant.body_position},started_at=${testStartedAt},finished_at=${testFinishedAt}`;
+    `age=${participant.age},gender=${participant.gender},school=${participant.school},study_level=${participant.studyLevel},traits=${participant.traits.join(';')},started_at=${testStartedAt},finished_at=${testFinishedAt}`;
 
   // Add survey answers to meta
-  const survey1Meta = Object.entries(survey1Answers).map(([q, a]) => `survey1_${q}=${a}`).join(',');
-  const survey2Meta = Object.entries(survey2Answers).map(([q, a]) => `survey2_${q}=${a}`).join(',');
+  const resilienceMeta = Object.entries(resilienceAnswers).map(([q, a]) => `part8_q${q}=${a}`).join(',');
+  const selfEsteemMeta = Object.entries(selfEsteemAnswers).map(([q, a]) => `part9_q${q}=${a}`).join(',');
+  const socialSupportMeta = Object.entries(socialSupportAnswers).map(([q, a]) => `part10_q${q}=${a}`).join(',');
   
-  const fullMeta = metaLine + (survey1Meta ? ',' + survey1Meta : '') + (survey2Meta ? ',' + survey2Meta : '');
+  // Add IAT statistics - ДЭЛГЭРЭНГҮЙ МЭДЭЭЛЭЛ
+  const iatMeta = `iat_d_score=${iatScore.dScore.toFixed(6)},iat_interpretation=${iatScore.interpretation},part5_mean_rt=${iatScore.part5.mean.toFixed(2)},part5_std_dev=${iatScore.part5.stdDev.toFixed(2)},part5_accuracy=${iatScore.part5.accuracy.toFixed(2)},part7_mean_rt=${iatScore.part7.mean.toFixed(2)},part7_std_dev=${iatScore.part7.stdDev.toFixed(2)},part7_accuracy=${iatScore.part7.accuracy.toFixed(2)},pooled_std_dev=${iatScore.pooledStdDev.toFixed(2)},mean_difference=${(iatScore.part7.mean - iatScore.part5.mean).toFixed(2)}`;
+  
+  const fullMeta = metaLine + 
+    (resilienceMeta ? ',' + resilienceMeta : '') + 
+    (selfEsteemMeta ? ',' + selfEsteemMeta : '') + 
+    (socialSupportMeta ? ',' + socialSupportMeta : '') +
+    ',' + iatMeta;
 
-  // 8, 9-р хэсгийн мөрүүдийг тусад нь нэмэх
-  let surveyRows = '';
-  
-  // 8-р хэсэг: Өөрийн Үнэлэмжийн Асуулга
-  Object.entries(survey1Answers).forEach(([question, answer], index) => {
-    surveyRows += `\n"${trialIndex + index + 1}","8","Өөрийн Үнэлэмжийн Асуулга","${index + 1}","${SURVEY1_QUESTIONS[index].q}","${answer}","${answer}","1","0"`;
-  });
-  
-  // 9-р хэсэг: Сэтгэл Хөдлөл, Мэдрэмжийн Асуулга  
-  Object.entries(survey2Answers).forEach(([question, answer], index) => {
-    surveyRows += `\n"${trialIndex + SURVEY1_QUESTIONS.length + index + 1}","9","Сэтгэл Хөдлөл, Мэдрэмжийн Асуулга","${index + 1}","${SURVEY2_QUESTIONS[index].q}","${answer}","${answer}","1","0"`;
-  });
-
-  return UTF8_BOM + fullMeta + '\n' + header + '\n' + body + surveyRows;
+  return UTF8_BOM + fullMeta + '\n' + header + '\n' + body;
 }
 
 function finalizeResults(){
   const csv = toCSV(records);
   const ts = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
-  const safeId = (participant.id||'anon').replace(/[^\w]/g,'_');
-  const filename = `iat_results_${safeId}_${ts}.csv`;
+  const safeId = `survey_${participant.age}_${participant.gender}_${ts}`.replace(/[^\w]/g,'_');
+  const filename = `survey_results_${safeId}.csv`;
 
-  const totalTime = records.reduce((sum, r) => sum + (Number(r.rt_ms)||0), 0);
+  // Calculate IAT score for display
+  const iatScore = calculateIATScore();
 
   const payload = {
     meta: {
       generated_at: new Date().toISOString(),
-      participant: participant.id,
       age: participant.age,
       gender: participant.gender,
-      total_records: records.length + SURVEY1_QUESTIONS.length + SURVEY2_QUESTIONS.length,
-      total_time_ms: totalTime,
-      survey1: survey1Answers,
-      survey2: survey2Answers
+      school: participant.school,
+      studyLevel: participant.studyLevel,
+      traits: participant.traits,
+      resilience: resilienceAnswers,
+      self_esteem: selfEsteemAnswers,
+      social_support: socialSupportAnswers,
+      iat_score: iatScore
     },
     participant_data: {
-      participant: participant.id,
       age: participant.age,
       gender: participant.gender,
+      school: participant.school,
+      studyLevel: participant.studyLevel,
+      traits: participant.traits,
       started_at: testStartedAt,
       finished_at: testFinishedAt
     },
@@ -743,35 +1183,84 @@ function finalizeResults(){
   // Discord руу илгээх
   sendToDiscord(payload);
   
-  // Бага зэрэг хүлээгээд CSV файл илгээх (Discord-д дараалалтай ирэхэд)
+  // Бага зэрэг хүлээгээд CSV файл илгээх
   setTimeout(() => {
     sendCSVToDiscord(csv, filename, participant);
   }, 1000);
 
-  renderCompletionUI(csv, filename);
+  renderCompletionUI(csv, filename, iatScore);
 }
 
-function avg(a){ if(!a.length) return NaN; return a.reduce((x,y)=>x+y,0)/a.length; }
 function escapeHtml(str){ return String(str).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
 
-function renderCompletionUI(csv, filename){
+function renderCompletionUI(csv, filename, iatScore){
   const previewText = [
-    `Participant: ${participant.id} | Age: ${participant.age} | Gender: ${participant.gender} | Body_position: ${participant.body_position}`,
-    `Started: ${testStartedAt} | Finished: ${testFinishedAt}`,
-    `Trials: ${records.length} | Correct: ${records.filter(r=>r.correct===1).length} | Incorrect: ${records.filter(r=>r.correct===0).length}`,
+    `Судалгаа дууслаа - Танд баярлалаа!`,
+    `Нас: ${participant.age} | Хүйс: ${participant.gender}`,
+    `Сургууль: ${participant.school} | Түвшин: ${participant.studyLevel}`,
+    `Шинж чанарууд: ${participant.traits.length}`,
+    `IAT тест: ${records.length} асуулт, ${records.filter(r=>r.correct===1).length} зөв`,
     ``,
-    csv.split('\n').slice(0,6).join('\n') + '\n...'
+    `=== IAT СТАТИСТИК ===`,
+    `5-р хэсэг (Өөр+Муу vs Тэд+Сайн):`,
+    `  Дундаж хариулах хугацаа: ${iatScore.part5.mean.toFixed(2)} ms`,
+    `  Стандарт хазайлт: ${iatScore.part5.stdDev.toFixed(2)} ms`,
+    `  Нарийвчлал: ${iatScore.part5.accuracy.toFixed(2)}%`,
+    ``,
+    `7-р хэсэг (Өөр+Сайн vs Тэд+Муу):`,
+    `  Дундаж хариулах хугацаа: ${iatScore.part7.mean.toFixed(2)} ms`,
+    `  Стандарт хазайлт: ${iatScore.part7.stdDev.toFixed(2)} ms`,
+    `  Нарийвчлал: ${iatScore.part7.accuracy.toFixed(2)}%`,
+    ``,
+    `D-оноо тооцоо:`,
+    `  M7 - M5 = ${iatScore.part7.mean.toFixed(2)} - ${iatScore.part5.mean.toFixed(2)} = ${(iatScore.part7.mean - iatScore.part5.mean).toFixed(2)}`,
+    `  Стандарт хазайлт: ${iatScore.pooledStdDev.toFixed(2)}`,
+    `  D = ${(iatScore.part7.mean - iatScore.part5.mean).toFixed(2)} / ${iatScore.pooledStdDev.toFixed(2)} = ${iatScore.dScore.toFixed(6)}`,
+    ``,
+    `IAT D-Оноо: ${iatScore.dScore.toFixed(6)}`,
+    `Тайлбар: ${iatScore.interpretation}`,
+    ``,
+    `Эхэлсэн: ${new Date(testStartedAt).toLocaleString('mn-MN')}`,
+    `Дууссан: ${new Date(testFinishedAt).toLocaleString('mn-MN')}`,
+    ``,
+    csv.split('\n').slice(0,10).join('\n') + '\n...'
   ].join('\n');
 
   completionMount.innerHTML = `
     <div class="results-box">
-      <div class="results-title">Тест дууслаа — Танд баярлалаа</div>
-      <div class="results-role"><strong>Оролцогч:</strong> Хүсвэл өөрөө файлаа татаж авч болно.</div>
+      <div class="results-title">Судалгаа дууслаа — Танд баярлалаа!</div>
+      
+      <div class="results-role">
+        <strong>IAT Үр дүн:</strong>
+        <div style="margin-top: 10px;">
+          <strong>IAT D-Оноо:</strong> <span style="font-size: 18px; color: #2f9b30;">${iatScore.dScore.toFixed(6)}</span><br>
+          <strong>Тайлбар:</strong> <span style="font-weight: bold;">${iatScore.interpretation}</span>
+        </div>
+        <div style="margin-top: 10px;">
+          <strong>5-р хэсэг (Өөр+Муу vs Тэд+Сайн):</strong><br>
+          • Дундаж хариулах хугацаа: <strong>${iatScore.part5.mean.toFixed(2)} ms</strong><br>
+          • Стандарт хазайлт: <strong>${iatScore.part5.stdDev.toFixed(2)} ms</strong><br>
+          • Нарийвчлал: <strong>${iatScore.part5.accuracy.toFixed(2)}%</strong>
+        </div>
+        <div style="margin-top: 10px;">
+          <strong>7-р хэсэг (Өөр+Сайн vs Тэд+Муу):</strong><br>
+          • Дундаж хариулах хугацаа: <strong>${iatScore.part7.mean.toFixed(2)} ms</strong><br>
+          • Стандарт хазайлт: <strong>${iatScore.part7.stdDev.toFixed(2)} ms</strong><br>
+          • Нарийвчлал: <strong>${iatScore.part7.accuracy.toFixed(2)}%</strong>
+        </div>
+        <div style="margin-top: 10px; background: #f0f8ff; padding: 10px; border-radius: 5px;">
+          <strong>D-оноо тооцоо:</strong><br>
+          • M7 - M5 = ${iatScore.part7.mean.toFixed(2)} - ${iatScore.part5.mean.toFixed(2)} = <strong>${(iatScore.part7.mean - iatScore.part5.mean).toFixed(2)}</strong><br>
+          • Стандарт хазайлт (Population) = <strong>${iatScore.pooledStdDev.toFixed(2)}</strong><br>
+          • D = ${(iatScore.part7.mean - iatScore.part5.mean).toFixed(2)} ÷ ${iatScore.pooledStdDev.toFixed(2)} = <strong>${iatScore.dScore.toFixed(6)}</strong>
+        </div>
+      </div>
+      
       <div class="results-actions">
         <button class="btn btn-success" id="btn-download">Файлыг татаж авах (CSV)</button>
         <button class="btn btn-warning" id="btn-toggle">Хариултыг харах</button>
       </div>
-      <div class="small-note">Тайлбар: Мэдээлэл Discord руу автоматаар илгээгдсэн.</div>
+      <div class="small-note">Тайлбар: Мэдээлэл Discord руу автоматаар илгээгдсэн. Стандарт хазайлтыг Population Standard Deviation ашигласан.</div>
       <pre class="results-preview" id="results-preview" style="display:none;">${escapeHtml(previewText)}</pre>
     </div>
   `;
